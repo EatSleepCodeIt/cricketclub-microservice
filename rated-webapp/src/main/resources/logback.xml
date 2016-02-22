@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="true">
+	<property resource="application.properties" />
+	
+	<appender name="loggly" class="ch.qos.logback.ext.loggly.LogglyAppender">
+        <endpointUrl>http://logs-01.loggly.com/inputs/75b7783d-1a03-4412-9508-094fef54cb23/tag/logback,authorization-server,${HOSTNAME},${ENVIRONMENT}</endpointUrl>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+                <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+                    <!-- prettyPrint is probably ok in dev, but usually not ideal in production: -->
+                    <prettyPrint>false</prettyPrint>
+                </jsonFormatter>
+                <context>api</context>
+                <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'000Z'</timestampFormat>
+                <timestampFormatTimezoneId>UTC</timestampFormatTimezoneId>
+                <appendLineSeparator>true</appendLineSeparator>
+            </layout>
+        </encoder>
+    </appender>
+    <root level="debug">
+        <appender-ref ref="loggly"/>
+    </root>
+        
+	<appender name="FILE"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>authorization-server.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>authorization-server_%d{yyyy-MM-dd}.log
+			</fileNamePattern>
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>%d{dd MMM yyyy HH:mm:ss:SSS}|%level|%thread|JVM_NAME_EMPTY|%class.%M| %msg%n</Pattern>
+		</layout>
+	</appender>
+
+
+	<logger name="org.hibernate.type" level="WARN" />
+	<logger name="org.hibernate" level="WARN" />
+	<logger name="org.springframework" level="WARN" />
+
+	<!-- in order to debug some marshalling issues, this needs to be TRACE -->
+	<logger name="org.springframework.web.servlet.mvc" level="WARN" />
+
+	<root level="INFO">
+		<appender-ref ref="FILE" />
+	</root>
+</configuration>

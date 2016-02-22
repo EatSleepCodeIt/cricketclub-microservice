@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: zuulserver
+
+info:
+  component: Zuul Server
+  
+server:
+  port: 8765
+  
+endpoints:
+  restart:
+    enabled: true
+  shutdown:
+    enabled: true
+  health:
+    sensitive: false
+
+zuul:
+  routes:
+    template: 
+      path: /api/template/**
+      serviceId: microservice-template
+    uaa: /api/uaa/**
+    user-service: /api/user/**
+    skrill-service: /api/skrill/**
+    
+---
+spring:
+  profiles: docker
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${eureka.hostname}:8761/eureka/
+  instance:
+    hostname: ${myserver.hostname}
+    metadataMap:
+      instanceId: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    
+logging:
+  level:
+    ROOT: INFO
+    org.springframework.web: DEBUG
+---
+
+spring:
+  profiles: development
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${eureka.hostname}:8761/eureka/
+  instance:
+    hostname: ${myserver.hostname}
+    metadataMap:
+      instanceId: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    
+logging:
+   levels:
+     ROOT: INFO
+     org.springframework.boot.env.PropertySourcesLoader: TRACE
+     org.springframework.web: DEBUG  
+---

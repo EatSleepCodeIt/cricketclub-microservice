@@ -1,0 +1,11 @@
+This is the spring cloud config service
+It uses a git repository to share the configuration between all microservices.
+
+you can change the ropository location for the properties in configserver.yml
+
+to test if the properties are correctly loaded:
+ - start the server
+
+-  curl localhost:8888/microservice-template/development
+
+where microservice-template is the name of the file.

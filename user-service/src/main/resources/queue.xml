@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xmlns:int-amqp="http://www.springframework.org/schema/integration/amqp"
+	xsi:schemaLocation="http://www.springframework.org/schema/integration/amqp http://www.springframework.org/schema/integration/amqp/spring-integration-amqp-2.1.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- Connection Factory -->
+	<!--<bean id="connectionFactory" 
+		class="org.springframework.amqp.rabbit.connection.SingleConnectionFactory">
+		<constructor-arg><value>54.194.95.123</value></constructor-arg>
+		<property name="username" value="admin" />
+		<property name="password" value="Rated1234" />
+		<property name="host" value="54.194.95.123" />
+		<property name="port" value="5672" />
+	</bean>
+
+	<rabbit:connection-factory id="connectionFactory"/>
+	<rabbit:template id="amqpTemplate" connection-factory="connectionFactory"/>
+	<rabbit:admin connection-factory="connectionFactory"/>
+	<rabbit:queue id='user-servic-queue' name='user-service'/>
+	
+	<rabbit:fanout-exchange id="fanoutExachange" name="fanout-exchange" >
+		<rabbit:bindings>
+			<rabbit:binding queue="user-service" />
+		</rabbit:bindings>
+	</rabbit:fanout-exchange>
+  
+  	<int:publish-subscribe-channel id="publishSubscribeChannel" />
+  	
+  	 PUBLISH -->
+	<!-- This is just an interface definition, no implementation required spring will generate an implementation which puts a message on the channel 
+	
+	<int:gateway id="publisher" service-interface="com.ratedforum.user.queue.publish.PublishService" default-request-channel="publishSubscribeChannel" />-->
+	
+	<int-amqp:outbound-channel-adapter channel="publishSubscribeChannel" amqp-template="amqpTemplate" exchange-name="exchange" />
+
+	<!-- SUBSCRIBE -->
+
+	<int-amqp:inbound-channel-adapter channel="publishSubscribeChannel" queue-names="user-service" connection-factory="connectionFactory" />
+    <int:service-activator input-channel="publishSubscribeChannel" ref="queueConsumer" method="onMessage"/>
+    
+    
+</beans>

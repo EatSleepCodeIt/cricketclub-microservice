@@ -1,0 +1,86 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'spring-boot'
+apply plugin: 'io.spring.dependency-management'
+
+sourceCompatibility = 1.8
+version = '1.0'
+
+buildscript {
+	repositories {
+		mavenCentral()
+		maven { url "http://repo.spring.io/libs-release" }
+		maven { url 'https://repo.spring.io/plugins-snapshot' }
+	}
+	dependencies {
+		classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.2.1.RELEASE'
+		classpath 'io.spring.gradle:dependency-management-plugin:0.3.1.BUILD-SNAPSHOT'
+		classpath "org.ajoberstar:gradle-git:0.8.0"
+	}
+}
+
+repositories {
+	mavenCentral()
+	mavenLocal()
+	maven { url "https://repo.spring.io/snapshot" }
+	maven { url "https://repo.spring.io/milestone" }
+	maven { url 'https://repo.spring.io/libs-milestone' }
+}
+
+dependencyManagement {
+	imports {
+		mavenBom 'org.springframework.cloud:spring-cloud-starter:1.0.2.RELEASE'
+	}
+}
+
+dependencies {
+	compile 'org.slf4j:slf4j-api:1.7.10'
+	compile 'log4j:log4j:1.2.17'
+	compile 'org.springframework.cloud:spring-cloud-starter-zuul'
+	compile "org.ajoberstar:grgit:0.2.2"
+	compile "org.ajoberstar:gradle-git:1.0.0"
+}
+
+task setupDockerFolder(type: Copy) {
+	from('build/libs/')
+	into('docker/')
+	include('*.jar')
+	rename { String fileName ->
+		fileName.replace("-${version}", "")
+	}
+}
+
+import org.apache.tools.ant.filters.*
+
+afterEvaluate {
+	configure(allProcessResourcesTasks()) {
+		filter(ReplaceTokens,
+			tokens: [baseName: project.jar.baseName,
+					version: project.jar.version,
+					gradleVersion: project.gradle.gradleVersion]
+		)
+	}
+}
+
+def allProcessResourcesTasks() {
+	sourceSets*.processResourcesTaskName.collect {
+		tasks[it]
+	}
+}
+
+import org.ajoberstar.grgit.*
+
+configure(rootProject) {
+	task gitMetadata << {
+		
+		ext {
+			repo = Grgit.open(project.file('.'))
+			branch = repo.branch?.current?.name
+			commitId = repo.head().abbreviatedId
+			commitTime = new Date(new Integer(repo.head().time)
+					.longValue()*1000L).format("yyyy-MM-dd HH:mm")
+		}
+	}
+
+	apply from: 'writeGitPropertiesFile.gradle'
+}

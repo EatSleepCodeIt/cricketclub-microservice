@@ -1,0 +1,3 @@
+# Bootstrap components
+org.springframework.cloud.bootstrap.BootstrapConfiguration=\
+com.ratedforum.cloud.config.server.ConfigServerBootstrapConfiguration

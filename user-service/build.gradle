@@ -1,0 +1,142 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'spring-boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'osgi'
+apply plugin: 'org.flywaydb.flyway'
+apply plugin: 'groovy'
+apply plugin: 'net.saliman.cobertura'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+version='0.0.1-SNAPSHOT'
+status = 'SNAPSHOT'
+group = 'com.ratedforum.user'
+
+buildscript {
+	repositories {
+		mavenCentral()
+		maven { url "http://repo.spring.io/libs-release" }
+		maven { url 'https://repo.spring.io/plugins-snapshot' }
+	}
+	dependencies {
+		classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.2.4.RELEASE'
+		classpath 'io.spring.gradle:dependency-management-plugin:0.3.1.BUILD-SNAPSHOT'
+		classpath "mysql:mysql-connector-java:5.1.34"
+		classpath 'org.flywaydb:flyway-gradle-plugin:3.2.1'
+		classpath "net.saliman:gradle-cobertura-plugin:2.2.5"
+		classpath "org.ajoberstar:gradle-git:0.8.0"
+	}
+}
+
+repositories {
+	mavenLocal()
+	jcenter()
+	mavenCentral()
+	maven { url "https://repo.spring.io/snapshot" }
+	maven { url "https://repo.spring.io/milestone" }
+	maven { url 'https://repo.spring.io/libs-milestone' }
+	maven { url "https://repo.spring.io/libs-release" }
+}
+
+cobertura {
+	coverageFormats = ['html', 'xml']
+	coverageIgnoreTrivial = true
+	coverageExcludes = ['.*com.ratedforum.uaa.model.*','.*com.ratedforum.uaa.exception.*']
+	
+}
+
+//for cobertura and java8
+configurations.all {
+	resolutionStrategy {
+		// Cobertura includes an ASM version that can't handle Java 8, ASM 5.0.3
+		//handles Java8
+		force 'org.ow2.asm:asm:5.0.3'
+		forcedModules = [ 'org.ow2.asm:asm:5.0.3' ]
+	}
+}
+
+/* Use this when you need to upload snapshot to nexus artifactory
+ * 
+ * uploadArchives {
+	repositories {
+		mavenDeployer {
+			repository(url: "http://172.31.11.79/content/repositories/snapshots") {
+				authentication(userName: "admin", password: "Rated1234")
+			}
+		}
+	}
+}*/
+
+dependencyManagement {
+	imports {
+		mavenBom 'org.springframework.cloud:spring-cloud-starter:1.0.3.RELEASE'
+	}
+}
+
+dependencies {
+	compile 'org.slf4j:slf4j-api:1.7.10'
+	compile 'ch.qos.logback.contrib:logback-json-classic:0.1.2'
+	compile 'ch.qos.logback.contrib:logback-jackson:0.1.2'
+	
+	compile "org.springframework.boot:spring-boot-starter-web"
+	compile "org.springframework.boot:spring-boot-starter-data-jpa"
+	compile "org.springframework.boot:spring-boot-starter-actuator"
+	compile 'org.springframework.cloud:spring-cloud-starter-eureka:1.0.3.RELEASE'
+	compile 'org.springframework.cloud:spring-cloud-netflix-turbine:1.0.3.RELEASE'
+	compile 'org.springframework.cloud:spring-cloud-starter-hystrix:1.0.3.RELEASE'
+	compile "org.springframework.cloud:spring-cloud-starter-security:1.0.3.RELEASE"
+	//compile 'org.springframework.cloud:spring-cloud-starter-bus-amqp:1.0.3.RELEASE'	
+	compile 'org.springframework.integration:spring-integration-amqp:4.1.5.RELEASE'
+	compile 'org.springframework:spring-messaging:4.1.7.RELEASE'
+	compile 'org.springframework.integration:spring-integration-java-dsl:1.0.2.RELEASE'
+
+
+	compile("org.springframework.boot:spring-boot-starter-amqp")
+	compile "org.springframework.security.oauth:spring-security-oauth2:2.0.6.RELEASE"
+	compile "org.springframework.data:spring-data-envers:0.2.0.RELEASE"
+	compile "org.springframework.hateoas:spring-hateoas:0.17.0.RELEASE"
+	compile 'org.springframework.plugin:spring-plugin-core:1.2.0.RELEASE'
+
+	compile "com.google.code.gson:gson:2.3.1"
+	compile 'mysql:mysql-connector-java:5.1.34'
+	compile "org.ajoberstar:grgit:0.2.2"
+	compile "org.ajoberstar:gradle-git:1.0.0"
+	
+	testCompile 'org.codehaus.groovy:groovy-all:2.4.0'
+	testCompile "org.spockframework:spock-core:0.7-groovy-2.0"
+	testCompile "org.codehaus.groovy.modules.http-builder:http-builder:0.7+"
+	testCompile "org.springframework.boot:spring-boot-starter-test"
+	testRuntime "cglib:cglib-nodep:3.1"     // allows mocking of classes (in addition to interfaces)
+	testRuntime "org.objenesis:objenesis:2.1"  // allows mocking of classes without default constructor (together with CGLIB)
+}
+
+task setupDockerFolder(type: Copy) {
+	from('build/libs/')
+	into('docker/')
+	include('*.jar')
+	rename { String fileName ->
+		fileName.replace("-${version}", "")
+	}
+}
+
+
+import org.ajoberstar.grgit.*
+import org.apache.tools.ant.filters.*
+
+import com.sun.org.apache.xalan.internal.xsltc.compiler.Copy.*
+
+configure(rootProject) {
+	task gitMetadata << {
+		
+		ext {
+			repo = Grgit.open(project.file('.'))
+			branch = repo.branch?.current?.name
+			commitId = repo.head().abbreviatedId
+			commitTime = new Date(new Integer(repo.head().time)
+					.longValue()*1000L).format("yyyy-MM-dd HH:mm")
+		}
+	}
+
+	apply from: 'writeGitPropertiesFile.gradle'
+}
